@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	
+	<flow name="add_emp_Flow" doc:id="c62ea9a9-0685-48d6-a48c-a9325134fcde" >
+		<logger level="INFO" doc:name="Logger" doc:id="9838334d-9b2d-4ada-8986-e943871305e9" message="#[payload]" />
+		<file:write doc:name="Write" doc:id="009d6e7f-fb9a-437c-8ac3-476e5fcba2a1" config-ref="File_Config" path="/sample/user.csv"/>
+		<try doc:name="Try" doc:id="21800469-5a1c-4d2e-9771-07dca7f76fa4" >
+			<db:insert doc:name="Insert" doc:id="b7e0e11b-cbc5-4d75-b30a-cab26abebaef" config-ref="Database_Config">
+			<db:sql>Insert into employee_assign(id,employee_name,employee_salary,employee_age,profile_image
+)values(:id,:employee_name,:employee_salary,:employee_age,:profile_image)</db:sql>
+			<db:input-parameters><![CDATA[#[{
+ 'id': if (payload.id != null) payload.id else "",
+ 'employee_name': if (payload.employee_name != null) payload.employee_name else "",
+ 'employee_salary': if (payload.employee_salary != null) payload.employee_salary else "",
+ 'employee_age': if (payload.employee_age != null) payload.employee_age else "",
+ 'profile_image': if (payload.profile_image != null) payload.profile_image else ""
+ }]]]></db:input-parameters>
+		</db:insert>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c1cd03b8-4ecd-4623-bbda-f50785c89a06" >
+					<set-variable value="failed" doc:name="Set Variable" doc:id="3610f1fd-97ba-46de-a7e0-8d7defdbe17a" variableName="error"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="e22c9eda-164f-4a6f-a2d8-5b0e0c069795" >
+			<when expression="#[vars.error == null]">
+				<email:send doc:name="Send" doc:id="d8006be5-ce2f-4329-b729-3f809f7ecbb7" config-ref="Email_SMTP" toAddresses="#[['akash.shewale@apisero.com']]" fromAddress="#[['akash.shewale@apisero.com']]" subject="New employee added" >
+					<email:body contentType="application/json" encoding="UTF-8" />
+					<email:attachments ><![CDATA[#[{
+  'emp_info.csv' : vars.data	
+}]]]></email:attachments>
+				</email:send>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="3e034092-219c-457a-a42b-6ed0eded8c48" message="error while insertions"/>
+			</otherwise>
+		</choice>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="8d4a64cc-e235-459a-9048-6af82a14b3fb" />
+		<logger level="INFO" doc:name="Logger" doc:id="3a253f3f-f165-48ad-9fff-7ad88cc7dd77" message="#[payload]" />
+	</flow>
+</mule>

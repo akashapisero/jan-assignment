@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd 
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="ce0e5a22-833f-4811-b537-1d8896264439" >
+		<http:request-connection host="dummy.restapiexample.com" />
+	</http:request-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="580d23d1-91f9-4924-b2cf-4f1c7c6fff11" >
+		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.username}" password="${secure::db.password}" database="${db.dbname}" />
+	</db:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="8605c0b3-07cb-4256-9283-31441417496d" maxEntries="25" />
+		<api-gateway:autodiscovery apiId="${api.id}" doc:name="API Autodiscovery" doc:id="27443260-2519-4042-a659-ef38fff526ba" flowRef="main-main" />
+	<configuration-properties doc:name="Configuration properties" doc:id="f81e90ab-de0a-4418-b90e-6dc39a3af445" file="secure.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="74ef7a79-7e58-4b63-9106-6a6adfb434e6" file="secure.yaml" key="1234567812345678" />
+     <email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="4aacaf8b-fa09-4e24-a0a4-8da55d919697" >
+		<email:smtp-connection host="smtp.gmail.com" user="$email.user}" password="${secure::email.password}" >
+			<email:properties />
+		</email:smtp-connection>
+	</email:smtp-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="5b882d4f-a85c-4a08-bff1-578abe4bcd5a" >
+		<file:connection workingDir="src/main/resources" />
+	</file:config>
+</mule>

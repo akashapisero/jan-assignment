@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="get_specific_emp_dataSub_Flow" doc:id="be7d5a78-6127-4b6f-874d-cd9f3d5bc97a" >
+		<set-variable value='# [attributes.headers."id"]' doc:name="Set Variable" doc:id="42d99eb8-452c-462a-bbe6-f5a6cc68e149" variableName="emp_id"/>
+		<os:retrieve doc:name="Retrieve" doc:id="9fc63721-3af1-47df-a898-6556fd09cc99" objectStore="Object_store" target="object_store_name" key="emp_name">
+			<os:default-value ><![CDATA[#['']]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Choice" doc:id="aa1359ec-a0ad-46a8-806b-231a730ff9ca" >
+			<when expression="#[vars.object_store_name == null]">
+				<db:select doc:name="Select" doc:id="9e11c23f-3089-4638-997f-4d511385710a" config-ref="Database_Config">
+			<db:sql>Select * from employee where id = :id </db:sql>
+			<db:input-parameters><![CDATA[#[{
+	id: 'vars.emp_id'
+}]]]></db:input-parameters>
+		</db:select>
+			</when>
+			<otherwise >
+				<set-payload value="#[vars.object_store_name]" doc:name="Set Payload" doc:id="1e19c5de-06a7-4339-afb8-de46535f183b" />
+			</otherwise>
+		</choice>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="745ed77f-7cd6-4540-a272-392b39cc12ad" />
+		<logger level="INFO" doc:name="Logger" doc:id="b0d6f761-cb6b-4ada-9604-182b7737ae8a" message="#[payload]"/>
+	</sub-flow>
+	<flow name="get_all_empdata_Sub_Flow" doc:id="62675e5d-cc54-4d7a-bcf5-7ecae334337c" >
+		<http:request method="GET" doc:name="Request" doc:id="a82dc014-5062-446d-a50d-01a789b66697" config-ref="HTTP_Request_configuration" path="/api/v1/employees" />
+		<logger level="INFO" doc:name="Logger" doc:id="7620d3ca-c9b9-4ec8-a6d8-76cd28c11c5e" message="#[payload]"/>
+		<batch:job jobName="get_empdataBatch_Job" doc:id="4178cb81-9ef9-4f84-9dbc-10dc0ac39891" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="c973400f-9ddd-44e9-b4da-fd4a28302640" >
+					<db:insert doc:name="Insert" doc:id="c26e893d-43ee-4c11-9a1b-1340bef1dd3f" config-ref="Database_Config">
+						<db:sql >Insert into employee_assign(id,employee_name,employee_salary,employee_age,profile_image
+)values(:id,:employee_name,:employee_salary,:employee_age,:profile_image)</db:sql>
+						<db:input-parameters ><![CDATA[#[{
+ 'id': if (payload.id != null) payload.id else "",
+ 'employee_name': if (payload.employee_name != null) payload.employee_name else "",
+ 'employee_salary': if (payload.employee_salary != null) payload.employee_salary else "",
+ 'employee_age': if (payload.employee_age != null) payload.employee_age else "",
+ 'profile_image': if (payload.profile_image != null) payload.profile_image else ""
+ }]]]></db:input-parameters>
+					</db:insert>
+					<logger level="INFO" doc:name="Logger" doc:id="8d207ce8-ac8b-4307-a301-0c010e311da4" message="#[payload]"/>
+					<os:store doc:name="empid" doc:id="4f2f18de-8dac-4121-b76a-c2c9813b94dd" key="id" objectStore="Object_store">
+						<os:value ><![CDATA[#[payload.id]]]></os:value>
+					</os:store>
+					<os:store doc:name="emp_name" doc:id="7eda96e6-7f6f-4860-9f6d-e5c71ce7531c" key="employee_name" objectStore="Object_store">
+						<os:value ><![CDATA[#[payload.employee_name]]]></os:value>
+					</os:store>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="f22d3d55-06c8-4343-a6d4-2460aa1e18ea" message="#Inserted successfully[payload]"/>
+			</batch:on-complete>
+		</batch:job>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8034fd86-ea64-4da7-9c2e-67d7d1806be7" >
+				<ee:transform doc:name="Transform Message" doc:id="2dcb365c-1923-46a3-8761-2711d82d8331" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	'reason' : 'error occured while insertion'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

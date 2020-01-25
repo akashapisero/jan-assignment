@@ -1,0 +1,16 @@
+#database
+db: 
+  username: "![EiX5T5/mc4AVoia9WlRsBA==]"
+  password: "![EiX5T5/mc4AVoia9WlRsBA==]"
+  dbname: "employee_assignment"
+  host: "www.db4free.net"
+  port: "3306"
+
+#email
+email:
+  user: "akash.shewale@apisero.com"
+  password: "![HNCjxhl8wJ8jBQQUKX20rw==]"
+
+#API:
+api:
+  id: "15973894"

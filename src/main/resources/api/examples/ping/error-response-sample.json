@@ -1,0 +1,10 @@
+{
+    "responseId": null,
+    "timestamp": "2018-04-30T13:22:42.695-04",
+    "status": 404,
+    "errors": [
+        {
+           "reason" : "Someting went wrong"
+        }
+    ]
+}
